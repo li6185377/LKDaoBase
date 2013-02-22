@@ -69,7 +69,7 @@
 //清楚创建表的历史记录
 +(void)clearCreateHistory;
 //返回表名  所有 Dao 都必须重载此方法
-+(const NSString*)getTableName;
++(NSString*)getTableName;
 
 //返回绑定的Model Class
 +(Class)getBindingModelClass;
@@ -118,12 +118,9 @@
 -(void)isExistsModel:(NSObject*)model callback:(void(^)(BOOL))block;
 -(void)isExistsWithWhere:(NSString*)where callback:(void (^)(BOOL))block;
 +(NSString*)toDBType:(NSString*)type; //把Object-c 类型 转换为sqlite 类型
-@end
 
-@interface NSString(LKisEmpty)
--(BOOL)isEmptyWithTrim;
--(NSString*)stringWithTrim;
--(BOOL)isNotEmpty;// 是否不为空  主要少判断次 NSStirng 是否为  nil
+//判断string 是否为 nil 或 空字符串
++(BOOL)checkStringNotEmpty:(NSString*)string;
 @end
 
 @interface LKDBPathHelper : NSObject

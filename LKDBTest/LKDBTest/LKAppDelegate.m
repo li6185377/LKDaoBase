@@ -47,7 +47,7 @@
     }];
     
     //查询
-    [dao searchWhereDic:nil orderBy:nil offset:0 count:15 callback:^(NSArray* array){
+    [dao searchWhereDic:nil orderBy:@"name,rowid desc,age" offset:0 count:15 callback:^(NSArray* array){
         NSLog(@"\n 数据%d条 \n : ",array.count);
         for (LKModelTest* model in array) {
             [model printAllPropertys];

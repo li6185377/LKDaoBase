@@ -12,7 +12,7 @@
 @synthesize columeNames;
 @synthesize columeTypes;
 @synthesize bindingQueue;
-+(const NSString *)getTableName
++(NSString *)getTableName
 {
     return @"";
 }
@@ -69,7 +69,7 @@ static NSMutableDictionary* onceCreateTable;
 }
 -(void)createTable
 {
-    if([[self.class getTableName] isEmptyWithTrim])
+    if([self.class checkStringNotEmpty:[self.class getTableName]])
     {
         NSLog(@"LKTableName is None!");
         return;
@@ -118,7 +118,7 @@ static NSMutableDictionary* onceCreateTable;
     [bindingQueue inDatabase:^(FMDatabase* db)
      {
          NSMutableString* query = [NSMutableString stringWithFormat:@"select rowid,* from %@ ",[self.class getTableName]];
-         if(where != nil && ![where isEmptyWithTrim])
+         if([self.class checkStringNotEmpty:where])
          {
              [query appendFormat:@" where %@",where];
          }
@@ -146,7 +146,7 @@ static NSMutableDictionary* onceCreateTable;
 }
 -(void)sqlString:(NSMutableString*)sql AddOder:(NSString*)orderby offset:(int)offset count:(int)count
 {
-    if(orderby != nil && ![orderby isEmptyWithTrim])
+    if([self.class checkStringNotEmpty:orderby])
     {
         [sql appendFormat:@" order by %@ ",orderby];
     }
@@ -281,7 +281,7 @@ static NSMutableDictionary* onceCreateTable;
          
          NSMutableString* updateSQL = [NSMutableString stringWithFormat:@"update %@ set %@ where  ",[self.class getTableName],updateKey];
 
-         if([where isKindOfClass:[NSString class]] && [where isNotEmpty])
+         if([where isKindOfClass:[NSString class]] && [self.class checkStringNotEmpty:where])
          {
              [updateSQL appendString:where];
          }
@@ -453,6 +453,7 @@ static NSMutableDictionary* onceCreateTable;
     }
     return value;
 }
+#pragma mark- 静态方法
 const static NSString* normaltypestring = @"floatdoublelongcharshort";
 const static NSString* blobtypestring = @"NSDataUIImage";
 +(NSString *)toDBType:(NSString *)type
@@ -469,7 +470,10 @@ const static NSString* blobtypestring = @"NSDataUIImage";
     }
     return LKSQLText;
 }
-#pragma mark-
++(BOOL)checkStringNotEmpty:(NSString *)string
+{
+    return !(string==nil||[[string stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]] isEqualToString:@""]);
+}
 +(NSDateFormatter*)getDateFormat
 {
     static  NSDateFormatter* formatter;
@@ -493,6 +497,7 @@ const static NSString* blobtypestring = @"NSDataUIImage";
     NSDate* date = [formatter dateFromString:str];
     return date;
 }
+
 @end
 
 
@@ -601,23 +606,6 @@ static char LKModelBase_Key_PrimaryKey;
     NSLog(@"\n%@\n",sb);
 }
 @end
-
-
-@implementation NSString(LKisEmpty)
--(BOOL)isNotEmpty
-{
-    return ![self isEmptyWithTrim];
-}
--(BOOL)isEmptyWithTrim
-{
-    return [[self stringWithTrim] isEqualToString:@""];
-}
--(NSString *)stringWithTrim
-{
-    return [self stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
-}
-@end
-
 @implementation LKDBPathHelper
 +(NSString *)getDocumentPath
 {

@@ -25,6 +25,7 @@
 		53042E3C166D8518001AA56F /* FMDatabaseQueue.m in Sources */ = {isa = PBXBuildFile; fileRef = 53042E2E166D8518001AA56F /* FMDatabaseQueue.m */; };
 		53042E3D166D8518001AA56F /* FMResultSet.m in Sources */ = {isa = PBXBuildFile; fileRef = 53042E30166D8518001AA56F /* FMResultSet.m */; };
 		53042E3E166D8518001AA56F /* LKDAOBase.m in Sources */ = {isa = PBXBuildFile; fileRef = 53042E32166D8518001AA56F /* LKDAOBase.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		53CA6D8716D602FE006B492B /* LKDBHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 53CA6D8616D602FE006B492B /* LKDBHelper.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +58,8 @@
 		53042E30166D8518001AA56F /* FMResultSet.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = FMResultSet.m; sourceTree = "<group>"; };
 		53042E31166D8518001AA56F /* LKDAOBase.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LKDAOBase.h; sourceTree = "<group>"; };
 		53042E32166D8518001AA56F /* LKDAOBase.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LKDAOBase.m; sourceTree = "<group>"; };
+		53CA6D8516D602FE006B492B /* LKDBHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LKDBHelper.h; sourceTree = "<group>"; };
+		53CA6D8616D602FE006B492B /* LKDBHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LKDBHelper.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -106,6 +109,8 @@
 		52D21A0A16572CD0004C6B8D /* LKDBTest */ = {
 			isa = PBXGroup;
 			children = (
+				53CA6D8516D602FE006B492B /* LKDBHelper.h */,
+				53CA6D8616D602FE006B492B /* LKDBHelper.m */,
 				52D21A4B165734FF004C6B8D /* 110.png */,
 				52D21A1316572CD0004C6B8D /* LKAppDelegate.h */,
 				52D21A1416572CD0004C6B8D /* LKAppDelegate.m */,
@@ -234,6 +239,7 @@
 				53042E3C166D8518001AA56F /* FMDatabaseQueue.m in Sources */,
 				53042E3D166D8518001AA56F /* FMResultSet.m in Sources */,
 				53042E3E166D8518001AA56F /* LKDAOBase.m in Sources */,
+				53CA6D8716D602FE006B492B /* LKDBHelper.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

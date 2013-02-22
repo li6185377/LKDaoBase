@@ -11,7 +11,7 @@
 @interface LKDAOTest : LKDAOBase
 
 @end
-@interface LKModelTest : LKModelBase
+@interface LKModelTest : NSObject
 
 @property(strong,nonatomic)NSString* name;
 @property int age;
@@ -25,7 +25,7 @@
 @interface LKDAOTest2 : LKDAOBase
 
 @end
-@interface LKModelTest2 : NSObject<LKModelBaseInteface>
+@interface LKModelTest2 : NSObject
 @property(copy,nonatomic)NSString* primaryKey;//继承接口的话 要手动 添加primarykey 和rowid 属性
 @property int rowid;
 

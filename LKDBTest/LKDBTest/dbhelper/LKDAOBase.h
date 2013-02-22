@@ -13,30 +13,51 @@
 
 #define LKSQLText @"text"
 #define LKSQLInt @"integer"
-#define LKSQLDouble @"real"
+#define LKSQLDouble @"float"
 #define LKSQLBlob @"blob"
 #define LKSQLNull @"null"
 #define LKSQLIntPrimaryKey @"integer primary key"
 
-@interface NSObject(LKGetPropertys)
-+(NSDictionary*)getPropertys; //返回 该类的所有属性 不上溯到 父类
-+(void)getSelfPropertys:(NSMutableArray *)pronames protypes:(NSMutableArray *)protypes isGetSuper:(BOOL)isGetSuper;//获取自身的属性 是否获取父类
-@end
+@interface NSObject(LKModelBase)
+/**
+ *	@brief  该类的所有属性
+            是否上溯到NSObject类（不会获取NSObject 的属性）由isContainParent 方法返回  可在子类种重载此方法
+ *
+ *	@return	返回 该类的所有属性
+ */
++(NSDictionary*)getPropertys;
 
+/**
+ *	@brief	获取自身的属性
+ *
+ *	@param 	pronames 	保存属性名称
+ *	@param 	protypes 	保存属性类型
+ *	@param 	isGetSuper 	是否获取父类
+ */
++(void)getSelfPropertys:(NSMutableArray *)pronames protypes:(NSMutableArray *)protypes isGetSuper:(BOOL)isGetSuper;
 
-//使用借口继承 来当 实体  要手动添加下面两个属性
-@protocol LKModelBaseInteface <NSObject>
-@property(copy,nonatomic)NSString* primaryKey;//主键名称 如果没有rowid 则跟据此名称update 和delete
-@property int rowid;  //数据库的 rowid
-@end
+/**
+ *	@brief	设置getPropertys方法 是否上溯到 父类
+ * 
+ *  @return
+ */
++(BOOL)isContainParent;
 
-@interface LKModelBase : NSObject<LKModelBaseInteface>
+/**
+ *	@brief	打印所有的属性名称和数据
+ */
+-(void)printAllPropertys;
+
+/**
+ *	@brief	主键名称 如果rowid<0 则跟据此名称update 和delete
+ */
 @property(copy,nonatomic)NSString* primaryKey;
+
+/**
+ *	@brief   sqlite 中存储的rowid
+ */
 @property int rowid;
-+(NSDictionary*)getPropertys; //还回 该类的所有属性 会添加父类属性
 @end
-
-
 
 @interface LKDAOBase : NSObject
 -(id)initWithDBQueue:(FMDatabaseQueue*)queue;
@@ -45,7 +66,7 @@
 @property(retain,nonatomic)NSMutableArray* columeNames; //列名
 @property(retain,nonatomic)NSMutableArray* columeTypes; //列类型
 
-//清除创建表的历史记录
+//清楚创建表的历史记录
 +(void)clearCreateHistory;
 //返回表名  所有 Dao 都必须重载此方法
 +(const NSString*)getTableName;
@@ -72,29 +93,37 @@
 -(void)searchWhere:(NSString*)where orderBy:(NSString*)columeName offset:(int)offset count:(int)count callback:(void(^)(NSArray*))block;
 
 //查询的条件以 key-value 模式传入
--(void)searchWhereDic:(NSDictionary*)where callback:(void(^)(NSArray*))block;
 -(void)searchWhereDic:(NSDictionary*)where orderBy:(NSString *)orderby offset:(int)offset count:(int)count callback:(void (^)(NSArray *))block;
-
+-(void)searchWhereDic:(NSDictionary*)where callback:(void(^)(NSArray*))block;
 
 //把 model 插入到 数据库
--(void)insertToDB:(NSObject<LKModelBaseInteface>*)model callback:(void(^)(BOOL))block;
--(void)updateToDB:(NSObject<LKModelBaseInteface>*)model callback:(void(^)(BOOL))block;
--(void)deleteToDB:(NSObject<LKModelBaseInteface>*)model callback:(void(^)(BOOL))block;
+-(void)insertToDB:(NSObject*)model callback:(void(^)(BOOL))block;
+
+//更新 数据 根据 rowid 或者 primary 列的值
+-(void)updateToDB:(NSObject*)model callback:(void(^)(BOOL))block;
+//根据条件更新
+-(void)updateToDB:(NSObject *)model where:(id)where callback:(void (^)(BOOL))block;
+//删除
+-(void)deleteToDB:(NSObject*)model callback:(void(^)(BOOL))block;
 //根据where 条件删除数据
 -(void)deleteToDBWithWhere:(NSString*)where callback:(void (^)(BOOL))block;
 -(void)deleteToDBWithWhereDic:(NSDictionary*)where callback:(void (^)(BOOL))block;
-//当 NSDictionary 的value 是NSArray 类型时  使用 or 当中间值
+
+
+//当 NSDictionary 的value 是NSArray 类型时  使用 in 语句   where  name in (value1,value2)
 
 //清空表数据
 -(void)clearTableData;
 
--(void)isExistsModel:(NSObject<LKModelBaseInteface>*)model callback:(void(^)(BOOL))block;
+-(void)isExistsModel:(NSObject*)model callback:(void(^)(BOOL))block;
+-(void)isExistsWithWhere:(NSString*)where callback:(void (^)(BOOL))block;
 +(NSString*)toDBType:(NSString*)type; //把Object-c 类型 转换为sqlite 类型
 @end
 
 @interface NSString(LKisEmpty)
 -(BOOL)isEmptyWithTrim;
 -(NSString*)stringWithTrim;
+-(BOOL)isNotEmpty;// 是否不为空  主要少判断次 NSStirng 是否为  nil
 @end
 
 @interface LKDBPathHelper : NSObject

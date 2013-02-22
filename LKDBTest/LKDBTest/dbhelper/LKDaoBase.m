@@ -18,7 +18,7 @@
 }
 +(Class)getBindingModelClass
 {
-    return [LKModelBase class];
+    return [NSObject class];
 }
 -(id)initWithDBQueue:(FMDatabaseQueue *)queue
 {
@@ -134,8 +134,11 @@ static NSMutableDictionary* onceCreateTable;
          NSMutableString* query = [NSMutableString stringWithFormat:@"select rowid,* from %@ ",[self.class getTableName]];
          
          NSMutableArray* values = [NSMutableArray arrayWithCapacity:0];
-         NSString* wherekey = [self dictionaryToSqlWhere:where andValues:values];
-         [query appendFormat:@" where %@",wherekey];
+         if(where !=nil&& where.count>0)
+         {
+             NSString* wherekey = [self dictionaryToSqlWhere:where andValues:values];
+             [query appendFormat:@" where %@",wherekey];
+         }
          [self sqlString:query AddOder:orderby offset:offset count:count];
          FMResultSet* set =[db executeQuery:query withArgumentsInArray:values];
          [self executeResult:set block:block];
@@ -153,7 +156,7 @@ static NSMutableDictionary* onceCreateTable;
 {
     NSMutableArray* array = [NSMutableArray arrayWithCapacity:0];
     while ([set next]) {
-        NSObject<LKModelBaseInteface>* bindingModel = [[[[self.class getBindingModelClass] alloc]init] autorelease];
+        NSObject* bindingModel = [[[[self.class getBindingModelClass] alloc]init] autorelease];
         bindingModel.rowid = [set intForColumnIndex:0];
         for (int i=0; i<self.columeNames.count; i++) {
             NSString* columeName = [self.columeNames objectAtIndex:i];
@@ -196,7 +199,7 @@ static NSMutableDictionary* onceCreateTable;
     [set close];
     block(array);
 }
--(void)insertToDB:(NSObject<LKModelBaseInteface> *)model callback:(void (^)(BOOL))block{
+-(void)insertToDB:(NSObject*)model callback:(void (^)(BOOL))block{
     
     [bindingQueue inDatabase:^(FMDatabase* db)
      {
@@ -243,7 +246,7 @@ static NSMutableDictionary* onceCreateTable;
          }
      }];
 }
--(void)updateToDB:(NSObject<LKModelBaseInteface> *)model callback:(void (^)(BOOL))block
+-(void)updateToDB:(NSObject *)model where:(id)where callback:(void (^)(BOOL))block
 {
     [bindingQueue inDatabase:^(FMDatabase* db)
      {
@@ -275,15 +278,29 @@ static NSMutableDictionary* onceCreateTable;
              [updateValues addObject:value];
          }
          [updateKey deleteCharactersInRange:NSMakeRange(updateKey.length - 1, 1)];
-         NSString* updateSQL;
-         if(model.rowid > 0)
+         
+         NSMutableString* updateSQL = [NSMutableString stringWithFormat:@"update %@ set %@ where  ",[self.class getTableName],updateKey];
+
+         if([where isKindOfClass:[NSString class]] && [where isNotEmpty])
          {
-             updateSQL = [NSString stringWithFormat:@"update %@ set %@ where rowid=%d",[self.class getTableName],updateKey,model.rowid];
+             [updateSQL appendString:where];
+         }
+         else if([where isKindOfClass:[NSDictionary class]])
+         {
+             NSMutableArray* valuearray = [NSMutableArray array];
+             NSString* sqlwhere = [self dictionaryToSqlWhere:where andValues:valuearray];
+             
+             [updateSQL appendString:sqlwhere];
+             [updateValues addObjectsFromArray:valuearray];
+         }
+         else if(model.rowid > 0)
+         {
+             [updateSQL appendFormat:@"rowid=%d",model.rowid];
          }
          else
          {
              //如果不通过 rowid 来 更新数据  那 primarykey 一定要有值
-             updateSQL = [NSString stringWithFormat:@"update %@ set %@ where %@=?",[self.class getTableName],updateKey,model.primaryKey];
+             [updateSQL appendFormat:@"%@=?",model.primaryKey];
              [updateValues addObject:[self safetyGetModel:model valueKey:model.primaryKey]];
          }
          BOOL execute = [db executeUpdate:updateSQL withArgumentsInArray:updateValues];
@@ -297,9 +314,12 @@ static NSMutableDictionary* onceCreateTable;
          }
      }];
     
-    
 }
--(void)deleteToDB:(NSObject<LKModelBaseInteface> *)model callback:(void (^)(BOOL))block{
+-(void)updateToDB:(NSObject*)model callback:(void (^)(BOOL))block
+{
+    [self updateToDB:model where:nil callback:block];
+}
+-(void)deleteToDB:(NSObject*)model callback:(void (^)(BOOL))block{
     
     [bindingQueue inDatabase:^(FMDatabase* db)
      {
@@ -345,24 +365,23 @@ static NSMutableDictionary* onceCreateTable;
             id va = [dic objectForKey:key];
             if([va isKindOfClass:[NSArray class]])
             {
+                if(wherekey.length > 0)
+                {
+                    [wherekey appendString:@" and "];
+                }
+                [wherekey appendFormat:@" %@ in(",key];
                 NSArray* vlist = va;
                 for (int j=0; j<vlist.count; j++) {
-                    id subvalue = [vlist objectAtIndex:j];
-                    if(wherekey.length > 0)
+                    [wherekey appendString:@" ? "];
+                    if(j != vlist.count-1)
                     {
-                        if(j >0)
-                        {
-                            [wherekey appendFormat:@" or %@ = ? ",key];
-                        }
-                        else{
-                            [wherekey appendFormat:@" and %@ = ? ",key];
-                        }
+                        [wherekey appendString:@","];
                     }
                     else
                     {
-                        [wherekey appendFormat:@" %@ = ? ",key];
+                        [wherekey appendString:@") "];
                     }
-                    [values addObject:subvalue];
+                    [values addObject:[vlist objectAtIndex:j]];
                 }
             }
             else
@@ -404,11 +423,16 @@ static NSMutableDictionary* onceCreateTable;
          [db executeUpdate:delete];
      }];
 }
--(void)isExistsModel:(NSObject<LKModelBaseInteface>*)model callback:(void(^)(BOOL))block{
+-(void)isExistsModel:(NSObject*)model callback:(void(^)(BOOL))block{
+    //如果有rowid 就肯定存在
+    [self isExistsWithWhere:[NSString stringWithFormat:@"%@ = '%@'",model.primaryKey,[self safetyGetModel:model valueKey:model.primaryKey]] callback:block];
+}
+-(void)isExistsWithWhere:(NSString *)where callback:(void (^)(BOOL))block
+{
     [bindingQueue inDatabase:^(FMDatabase* db)
      {
          //rowid 就不判断了
-         NSString* rowCountSql = [NSString stringWithFormat:@"select count(*) from %@ where %@ = '%@'",[self.class getTableName],model.primaryKey,[self safetyGetModel:model valueKey:model.primaryKey]];
+         NSString* rowCountSql = [NSString stringWithFormat:@"select count(rowid) from %@ where %@",[self.class getTableName],where];
          FMResultSet* resultSet = [db executeQuery:rowCountSql];
          [resultSet next];
          int result =  [resultSet intForColumnIndex:0];
@@ -420,7 +444,7 @@ static NSMutableDictionary* onceCreateTable;
          }
      }];
 }
--(id)safetyGetModel:(NSObject<LKModelBaseInteface>*) model valueKey:(NSString*)valueKey
+-(id)safetyGetModel:(NSObject*) model valueKey:(NSString*)valueKey
 {
     id value = [model valueForKey:valueKey];
     if(value == nil)
@@ -470,14 +494,23 @@ const static NSString* blobtypestring = @"NSDataUIImage";
     return date;
 }
 @end
-@implementation NSObject(LKGetPropertys)
+
+
+static char LKModelBase_Key_RowID;
+static char LKModelBase_Key_PrimaryKey;
+@implementation NSObject(LKModelBase)
+
 +(NSDictionary *)getPropertys
 {
     NSMutableArray* pronames = [NSMutableArray array];
     NSMutableArray* protypes = [NSMutableArray array];
     NSDictionary* props = [NSDictionary dictionaryWithObjectsAndKeys:pronames,@"name",protypes,@"type",nil];
-    [self getSelfPropertys:pronames protypes:protypes isGetSuper:NO];
+    [self getSelfPropertys:pronames protypes:protypes isGetSuper:[self isContainParent]];
     return props;
+}
++(BOOL)isContainParent
+{
+    return NO;
 }
 + (void)getSelfPropertys:(NSMutableArray *)pronames protypes:(NSMutableArray *)protypes isGetSuper:(BOOL)isGetSuper
 {
@@ -537,17 +570,24 @@ const static NSString* blobtypestring = @"NSDataUIImage";
         [[self superclass] getSelfPropertys:pronames protypes:protypes isGetSuper:isGetSuper];
     }
 }
-@end
-@implementation LKModelBase
-+(NSDictionary *)getPropertys
+
+-(void)setRowid:(int)rowid
 {
-    NSMutableArray* pronames = [NSMutableArray array];
-    NSMutableArray* protypes = [NSMutableArray array];
-    NSDictionary* props = [NSDictionary dictionaryWithObjectsAndKeys:pronames,@"name",protypes,@"type",nil];
-    [self getSelfPropertys:pronames protypes:protypes isGetSuper:YES];
-    return props;
+    objc_setAssociatedObject(self, &LKModelBase_Key_RowID,[NSNumber numberWithInt:rowid], OBJC_ASSOCIATION_ASSIGN);
 }
--(NSString *)description
+-(int)rowid
+{
+    return objc_getAssociatedObject(self, &LKModelBase_Key_RowID);
+}
+-(void)setPrimaryKey:(NSString *)primaryKey
+{
+    objc_setAssociatedObject(self, &LKModelBase_Key_PrimaryKey,primaryKey, OBJC_ASSOCIATION_COPY_NONATOMIC);
+}
+-(NSString *)primaryKey
+{
+    return objc_getAssociatedObject(self, &LKModelBase_Key_PrimaryKey);
+}
+-(void)printAllPropertys
 {
     NSMutableString* sb = [NSMutableString stringWithCapacity:0];
     unsigned int outCount, i;
@@ -558,16 +598,16 @@ const static NSString* blobtypestring = @"NSDataUIImage";
         [sb appendFormat:@"\n %@ : %@ ",propertyName,[self valueForKey:propertyName]];
     }
     free(properties);
-    return sb;
-}
--(void)dealloc
-{
-    self.primaryKey = nil;
-    [super dealloc];
+    NSLog(@"\n%@\n",sb);
 }
 @end
 
+
 @implementation NSString(LKisEmpty)
+-(BOOL)isNotEmpty
+{
+    return ![self isEmptyWithTrim];
+}
 -(BOOL)isEmptyWithTrim
 {
     return [[self stringWithTrim] isEqualToString:@""];

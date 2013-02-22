@@ -9,7 +9,7 @@
 
 #import "LKAppDelegate.h"
 #import "LKDAOTest.h"
-static FMDatabaseQueue* queue;
+#import "LKDBHelper.h"
 @implementation LKAppDelegate
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
@@ -20,11 +20,11 @@ static FMDatabaseQueue* queue;
     self.window.rootViewController = [[UIViewController alloc]init];
     [self.window makeKeyAndVisible];
     
-    queue = [[FMDatabaseQueue alloc]initWithPath:[LKDBPathHelper getPathForDocuments:@"test.db" inDir:@"db"]];
     
-    LKDAOTest2* dao = [[LKDAOTest2 alloc]initWithDBQueue:queue];
-
-    LKModelTest2* model = [[LKModelTest2 alloc]init]; //  使用接口实现类 来当 实体  如果属性相同  可互相替换
+    
+    LKDAOTest2* dao = [LKDAOTest2 sharedDao];
+    
+    LKModelTest2* model = [[LKModelTest2 alloc]init]; 
 
     [dao clearTableData];//清空表数据
     
@@ -34,47 +34,67 @@ static FMDatabaseQueue* queue;
     model.date = [NSDate date];
     model.image = [UIImage imageNamed:@"110.png"];
     model.bytes = [@"aaaaaabbbbbbcccccc" dataUsingEncoding:NSUTF8StringEncoding];
-
+    
+    [model printAllPropertys];
     [dao insertToDB:model callback:nil];
-
+    
     model.name = @"womei";
     [dao insertToDB:model callback:nil];  //可一直 插入
     
     model.name = @"tamei";
     [dao insertToDB:model callback:^(BOOL nono){
-        NSLog(@"insert %d",nono);
+        NSLog(@"插入结果: %d",nono);
     }];
     
-    NSMutableDictionary* dic = [NSMutableDictionary dictionary];
-    [dic setObject:@"tamei" forKey:@"name"];
-    [dao searchWhereDic:dic orderBy:nil offset:0 count:15 callback:^(NSArray* array){
-        NSLog(@"\n 查询完的数据 \n : %d",array.count);
+    //查询
+    [dao searchWhereDic:nil orderBy:nil offset:0 count:15 callback:^(NSArray* array){
+        NSLog(@"\n 数据%d条 \n : ",array.count);
         for (LKModelTest* model in array) {
-            NSLog(@"model{%@}",model);
+            [model printAllPropertys];
         }
     }];
     
+    //条件查询
+    NSMutableDictionary* dic = [NSMutableDictionary dictionary];
+    [dic setObject:@"tamei" forKey:@"name"];
+    
+    //一个key 多条件用 NSArray
     NSArray* selectnames =[NSArray arrayWithObjects:@"tamei",@"womei", nil];
     [dic setObject:selectnames forKey:@"name"];
     [dic setObject:@"16" forKey:@"age"];
+    
     [dao searchWhereDic:dic orderBy:nil offset:0 count:15 callback:^(NSArray* array){
-        NSLog(@"\n 查询完的数据 \n : %d",array.count);
+         NSLog(@"\n 数据%d条 \n : ",array.count);
         for (LKModelTest* model in array) {
-            NSLog(@"model{%@}",model);
+            NSLog(@"rowid %d name : %@",model.rowid,model.name);
         }
     }];
     
-    
-    
+    //更新   如果有 更新primary 列的值 最好rowid 有值 不然会更新失败 或者错乱
     model.name = @"haishi nimei";
     [dao updateToDB:model callback:nil];
+    
+    //如果  要更新 primary的 值  而且  不知道 他的 rowid
+    
+    model.rowid = -1;
+    model.name = @"haishi womei"; //更新了 primary 列上的值  如果 这时候用默认更新就会失败  所有要我们自己加条件
+    [dao updateToDB:model where:@"name = 'womei'" callback:nil];
+    
+    //or 使用     NSDictionary  当条件
+    
+    NSMutableDictionary* dic2 = [NSMutableDictionary dictionary];
+    [dic2 setObject:@[@"nimei",@"womei"] forKey:@"name"];
+    [dao updateToDB:model where:dic2 callback:nil];
+    
+    
     [dao searchWhere:nil orderBy:nil offset:0 count:15 callback:^(NSArray* array){
         NSLog(@"\n 更新完的数据 \n : %d",array.count);
         for (LKModelTest* model in array) {
-            NSLog(@" name : %@",model.name);
+            NSLog(@"rowid %d name : %@",model.rowid,model.name);
         }
     }];
     
+    //删除
     [dao deleteToDB:model callback:nil];
     
     [dao searchWhere:nil orderBy:nil offset:0 count:15 callback:^(NSArray* array){
@@ -87,9 +107,11 @@ static FMDatabaseQueue* queue;
     //根据条件删除
     NSMutableDictionary* deleteDic = [NSMutableDictionary dictionary];
 //    NSMutableArray* names = [NSMutableArray arrayWithObjects:@"nimei",@"womei",nil];
-    [deleteDic setObject:@"womei" forKey:@"name"];
+    [deleteDic setObject:@"haishi nimei" forKey:@"name"];
     [dao deleteToDBWithWhereDic:deleteDic callback:nil];
     
+    
+    //最终结果
     [dao searchWhere:nil orderBy:nil offset:0 count:15 callback:^(NSArray* array){
         NSLog(@"\n 删除完的数据 \n : %d",array.count);
         for (LKModelTest* model in array) {

@@ -104,6 +104,38 @@ static NSMutableDictionary* onceCreateTable;
     return pars;
 }
 
+-(void)rowCount:(void (^)(int))callback
+{
+    [self rowCount:callback where:nil];
+}
+-(void)rowCount:(void (^)(int))callback where:(id)where
+{
+    [bindingQueue inDatabase:^(FMDatabase* db){
+        NSMutableString* rowCountSql = [NSMutableString stringWithFormat:@"select count(rowid)  from %@ ",[self.class getTableName]];
+        FMResultSet* resultSet = nil;
+        if([where isKindOfClass:[NSString class]] && [self.class checkStringNotEmpty:where])
+        {
+            [rowCountSql appendFormat:@" where %@",where];
+            resultSet = [db executeQuery:rowCountSql];
+        }
+        else if([where isKindOfClass:[NSDictionary class]])
+        {
+            NSMutableArray* valuesarray = [NSMutableArray array];
+            NSString* ww = [self dictionaryToSqlWhere:where andValues:valuesarray];
+            [rowCountSql appendFormat:@" where %@",ww];
+            resultSet = [db executeQuery:rowCountSql withArgumentsInArray:valuesarray];
+        }
+        else
+        {
+            resultSet = [db executeQuery:rowCountSql];
+        }
+        [resultSet next];
+        int result =  [resultSet intForColumnIndex:0];
+        [resultSet close];
+        callback(result);
+    }];
+}
+
 -(void)searchAll:(void(^)(NSArray*))callback{
     [self searchWhere:nil orderBy:nil offset:0 count:15 callback:callback];
 }

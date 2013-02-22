@@ -80,6 +80,9 @@
 //返回 create table parameter 语句
 -(NSString*)getParameterString;
 
+-(void)rowCount:(void(^)(int))callback;
+//where 支持 dic 和 string  两种类型
+-(void)rowCount:(void(^)(int))callback where:(id)where;
 //创建数据库
 -(void)createTable;
 

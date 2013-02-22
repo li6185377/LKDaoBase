@@ -13,10 +13,9 @@
 {
     return [LKModelTest class];
 }
-const static NSString* tablename = @"lktable";
-+(const NSString *)getTableName
++(NSString *)getTableName
 {
-    return tablename;
+    return @"lktable";
 }
 @end
 
@@ -36,10 +35,9 @@ const static NSString* tablename = @"lktable";
 {
     return [LKModelTest2 class];
 }
-const static NSString* tablename2 = @"lktable2";
-+(const NSString *)getTableName
++(NSString *)getTableName
 {
-    return tablename2;
+    return @"lktable2";
 }
 @end
 @implementation LKModelTest2

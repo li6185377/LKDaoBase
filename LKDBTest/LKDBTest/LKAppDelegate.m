@@ -63,8 +63,16 @@
     [dic setObject:selectnames forKey:@"name"];
     [dic setObject:@"16" forKey:@"age"];
     
+    [dao rowCount:^(int count) {
+         NSLog(@"\n 数据%d条 \n : ",count);
+    } where:nil];
+    
+    
+    [dao rowCount:^(int count) {
+        NSLog(@"\n 数据%d条 \n : ",count);
+    } where:@{@"name":@"tamei"}];
+    
     [dao searchWhereDic:dic orderBy:nil offset:0 count:15 callback:^(NSArray* array){
-         NSLog(@"\n 数据%d条 \n : ",array.count);
         for (LKModelTest* model in array) {
             NSLog(@"rowid %d name : %@",model.rowid,model.name);
         }

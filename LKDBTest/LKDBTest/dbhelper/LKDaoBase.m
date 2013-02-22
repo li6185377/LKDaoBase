@@ -69,7 +69,7 @@ static NSMutableDictionary* onceCreateTable;
 }
 -(void)createTable
 {
-    if([self.class checkStringNotEmpty:[self.class getTableName]])
+    if([self.class checkStringNotEmpty:[self.class getTableName]] == NO)
     {
         NSLog(@"LKTableName is None!");
         return;

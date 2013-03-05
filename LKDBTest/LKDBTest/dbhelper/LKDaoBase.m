@@ -69,7 +69,7 @@ static NSMutableDictionary* onceCreateTable;
 }
 -(void)createTable
 {
-    if([self.class checkStringNotEmpty:[self.class getTableName]] == NO)
+    if([self.class checkStringNotEmpty:[self.class getTableName]])
     {
         NSLog(@"LKTableName is None!");
         return;
@@ -111,7 +111,7 @@ static NSMutableDictionary* onceCreateTable;
 -(void)rowCount:(void (^)(int))callback where:(id)where
 {
     [bindingQueue inDatabase:^(FMDatabase* db){
-        NSMutableString* rowCountSql = [NSMutableString stringWithFormat:@"select count(rowid)  from %@ ",[self.class getTableName]];
+        NSMutableString* rowCountSql = [NSMutableString stringWithFormat:@"select count(rowid) from %@ ",[self.class getTableName]];
         FMResultSet* resultSet = nil;
         if([where isKindOfClass:[NSString class]] && [self.class checkStringNotEmpty:where])
         {
@@ -312,7 +312,7 @@ static NSMutableDictionary* onceCreateTable;
          [updateKey deleteCharactersInRange:NSMakeRange(updateKey.length - 1, 1)];
          
          NSMutableString* updateSQL = [NSMutableString stringWithFormat:@"update %@ set %@ where  ",[self.class getTableName],updateKey];
-
+         
          if([where isKindOfClass:[NSString class]] && [self.class checkStringNotEmpty:where])
          {
              [updateSQL appendString:where];
@@ -542,14 +542,20 @@ static char LKModelBase_Key_PrimaryKey;
     NSMutableArray* pronames = [NSMutableArray array];
     NSMutableArray* protypes = [NSMutableArray array];
     NSDictionary* props = [NSDictionary dictionaryWithObjectsAndKeys:pronames,@"name",protypes,@"type",nil];
-    [self getSelfPropertys:pronames protypes:protypes isGetSuper:[self isContainParent]];
+    [self getSelfPropertys:pronames protypes:protypes];
     return props;
 }
 +(BOOL)isContainParent
 {
     return NO;
 }
-+ (void)getSelfPropertys:(NSMutableArray *)pronames protypes:(NSMutableArray *)protypes isGetSuper:(BOOL)isGetSuper
+/**
+ *	@brief	获取自身的属性
+ *
+ *	@param 	pronames 	保存属性名称
+ *	@param 	protypes 	保存属性类型
+ */
++ (void)getSelfPropertys:(NSMutableArray *)pronames protypes:(NSMutableArray *)protypes
 {
     unsigned int outCount, i;
     objc_property_t *properties = class_copyPropertyList([self class], &outCount);
@@ -602,19 +608,19 @@ static char LKModelBase_Key_PrimaryKey;
         
     }
     free(properties);
-    if(isGetSuper && [self superclass] != [NSObject class])
+    if([self isContainParent] && [self superclass] != [NSObject class])
     {
-        [[self superclass] getSelfPropertys:pronames protypes:protypes isGetSuper:isGetSuper];
+        [[self superclass] getSelfPropertys:pronames protypes:protypes];
     }
 }
 
 -(void)setRowid:(int)rowid
 {
-    objc_setAssociatedObject(self, &LKModelBase_Key_RowID,[NSNumber numberWithInt:rowid], OBJC_ASSOCIATION_ASSIGN);
+    objc_setAssociatedObject(self, &LKModelBase_Key_RowID,[NSNumber numberWithInt:rowid], OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 -(int)rowid
 {
-    return objc_getAssociatedObject(self, &LKModelBase_Key_RowID);
+    return [objc_getAssociatedObject(self, &LKModelBase_Key_RowID) intValue];
 }
 -(void)setPrimaryKey:(NSString *)primaryKey
 {

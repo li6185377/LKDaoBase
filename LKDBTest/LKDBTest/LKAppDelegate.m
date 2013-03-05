@@ -43,16 +43,27 @@
     
     model.name = @"tamei";
     [dao insertToDB:model callback:^(BOOL nono){
-        NSLog(@"插入结果: %d",nono);
+        NSLog(@"数据 插入 结果:%d",nono);
+        NSLog(@"插入结束");
     }];
     
     //查询
     [dao searchWhereDic:nil orderBy:@"name,rowid desc,age" offset:0 count:15 callback:^(NSArray* array){
-        NSLog(@"\n 数据%d条 \n : ",array.count);
+        NSLog(@"开始查询 \n 数据%d条 \n : ",array.count);
         for (LKModelTest* model in array) {
             [model printAllPropertys];
         }
     }];
+    
+   
+    [dao rowCount:^(int count) {
+         NSLog(@" 行数查询:\n 数据%d条 \n : ",count);
+    } where:nil];
+    
+    
+    [dao rowCount:^(int count) {
+        NSLog(@"行数条件查询: \n 数据%d条 \n : ",count);
+    } where:@{@"name":@"tamei"}];
     
     //条件查询
     NSMutableDictionary* dic = [NSMutableDictionary dictionary];
@@ -63,18 +74,10 @@
     [dic setObject:selectnames forKey:@"name"];
     [dic setObject:@"16" forKey:@"age"];
     
-    [dao rowCount:^(int count) {
-         NSLog(@"\n 数据%d条 \n : ",count);
-    } where:nil];
-    
-    
-    [dao rowCount:^(int count) {
-        NSLog(@"\n 数据%d条 \n : ",count);
-    } where:@{@"name":@"tamei"}];
-    
     [dao searchWhereDic:dic orderBy:nil offset:0 count:15 callback:^(NSArray* array){
+        NSLog(@"\n条件查询:\n");
         for (LKModelTest* model in array) {
-            NSLog(@"rowid %d name : %@",model.rowid,model.name);
+            NSLog(@" rowid %d name : %@  \n",model.rowid,model.name);
         }
     }];
     
@@ -86,7 +89,9 @@
     
     model.rowid = -1;
     model.name = @"haishi womei"; //更新了 primary 列上的值  如果 这时候用默认更新就会失败  所有要我们自己加条件
-    [dao updateToDB:model where:@"name = 'womei'" callback:nil];
+    [dao updateToDB:model where:@"name = 'womei'" callback:^(BOOL yes) {
+        NSLog(@"更新结果:%d\n",yes);
+    }];
     
     //or 使用     NSDictionary  当条件
     

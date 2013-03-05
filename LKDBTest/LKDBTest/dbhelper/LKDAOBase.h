@@ -28,15 +28,6 @@
 +(NSDictionary*)getPropertys;
 
 /**
- *	@brief	获取自身的属性
- *
- *	@param 	pronames 	保存属性名称
- *	@param 	protypes 	保存属性类型
- *	@param 	isGetSuper 	是否获取父类
- */
-+(void)getSelfPropertys:(NSMutableArray *)pronames protypes:(NSMutableArray *)protypes isGetSuper:(BOOL)isGetSuper;
-
-/**
  *	@brief	设置getPropertys方法 是否上溯到 父类
  * 
  *  @return

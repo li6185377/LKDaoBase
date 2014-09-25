@@ -1,6 +1,10 @@
 LKDaoBase
 =========
 
+新版本。。。。  https://github.com/li6185377/LKDBHelper-SQLite-ORM  。。。
+哈哈  竟然一直更新了两年
+
+
 automation database operation 根据绑定的实体类对数据库自动操作(增,删,改,查)
 
 对于每个实体 几乎是 0操作   你不用再一行行 写插入 修改 删除的 代码了  定义完 属性 你就完事。 表也是自动创建的
